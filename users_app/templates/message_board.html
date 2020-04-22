@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge,chrome=1">
+
+    {% load static %}
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'bootstrap.css' %}">
+
+    <!-- Custom CSS stylesheet-->
+    <!-- <link rel="stylesheet" type="text/css" href="{% static 'style.css' %}"> -->
+
+    <style>
+
+
+      img {
+        width: 150px;
+      }
+
+      .top_row {
+        margin-top: 15px;
+      }
+      .second_row {
+        margin-top: 25px;
+      }
+      textarea {
+        min-height: 120px;
+        max-height: 200px;
+        overflow: auto;
+      }
+      .message_content {
+        max-height: 300px;
+        overflow: auto;
+        border: 1px solid grey;
+        border-radius: 5px;
+        padding: 5px;
+      }
+      .comment_content {
+        max-height: 150px;
+        overflow: auto;
+        border: 1px solid grey;
+        border-radius: 5px;
+        padding: 5px;
+      }
+      .mc_header {
+        margin-top: 5px;
+        margin-bottom: 3px;
+      }
+
+      .comment_textarea {
+        min-height: 20px;
+        max-height: 50px;
+      }
+      .comment_button {
+        margin-top: 10px;
+      }
+      button {
+        min-width: 80px;
+      }
+      .edit_delete_options {
+        margin-top: -15px;
+        margin-bottom: 2px;
+      }
+
+      .modal_body {
+        text-align: left;
+      }
+
+      .post_message_header {
+        display: inline-block;
+      }
+      .error_message {
+        display: inline-block;
+        color: red;
+        margin-top: 0px;
+        margin-bottom: 0px;
+      }
+      .comment_error {
+        color: red;
+      }
+
+      .profile_picture {
+        background-size: contain;
+        background-repeat: no-repeat;
+      }
+
+    </style>
+
+    <title>Message board</title>
+
+  </head>
+  
+  <body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-md navbar-light bg-light">
+      <a class="navbar-brand" href="/">User Dashboard</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      {% if request.session.user_id == None %}
+        <a class="navbar-nav mr-auto nav-link disabled" href="/dashboard">Dashboard</a>
+        <a class="navbar-nav mr-sm-0 nav-link" href="/signin">Signin</a>
+      {% else %}
+        <a class="navbar-nav mr-sm-0 nav-link" href="/dashboard">Dashboard</a>
+        <a class="navbar-nav mr-auto nav-link" href="/message_board/{{user.id}}">Wall</a>
+      {% if user.level == 9%}
+        <a class="navbar-nav mr-sm-0 nav-link" href="/dashboard/edit_profile/{{user.id}}">{{user.first_name}} {{user.last_name}} (admin)</a>
+      {% else %}
+        <a class="navbar-nav mr-sm-0 nav-link" href="/dashboard/edit_profile/{{user.id}}">{{user.first_name}} {{user.last_name}}</a>
+      {% endif %}
+        <a class="navbar-nav mr-sm-0 nav-link" href="/logoff">Logoff</a>
+      {% endif %}
+      </div>
+    </nav>
+
+    <div class="container">
+      <div class="row top_row">
+        
+        <!-- Profile photo -->
+        <div class="col-6 offset-3 col-md-3 offset-md-0 col-lg-2">
+          {% if profile.profile_photo %}
+          <img src="{{profile.profile_photo.url}}" alt="profile photo">
+          {% else %}
+          <img src="{{profile.default_photo.url}}" alt="profile photo">
+          {% endif %}
+        </div>
+
+        <div class="col-12 col-md-9 col-lg-10">
+          <div class="row">
+            <div class="col-12">
+              <h3>{{profile.first_name}} {{profile.last_name}}</h3>
+            </div>
+          </div>
+          <div class="row">
+            {% if profile.city and profile.state and profile.country %}
+            <div class="col-12">Location: {{profile.city}} {{profile.state}}, {{profile.country}}</div>
+            {% else %}
+            <div class="col-12">Member at large</div>
+            {% endif %}
+          </div>
+          <div class="row">
+            <div class="col-12">Member since: {{profile.created_at|date:"M d, Y"}}</div>
+          </div>
+          <div class="row">
+            <div class="col-12">Posts made: {{profile.messages_posted|length}}</div>
+          </div>
+          <div class="row">
+            <div class="col-12">Description: {{profile.description}}</div>
+          </div>
+        </div>
+      </div>
+    
+      <!-- Post a Message / Leave a message for {{profile.name}} header -->
+      <div class="row second_row">
+        <div class="col-12">
+        {% if profile.id == user.id%}
+          {% if errors.message %}
+          <h5 class="post_message_header">Post a message</h5>
+          <p class="error_message">&nbsp&nbsp<small>{{ errors.message }}</small></p>
+          {% else %}
+          <h5>Post a message</h5>
+          {% endif %}
+        {% else %}
+          <h5>Leave a message for {{profile.first_name}} </h5>
+        {% endif %}
+        </div>
+      </div>
+
+      <!-- Post a Message / Leave a message for {{profile.name}} content -->
+      <div class="row">
+        <div class="col-12">
+          <form action="/message_board/{{profile.id}}/post_message" method="post">
+            {% csrf_token %}
+            <div class="form-group">
+              <textarea class="form-control" name="message"></textarea>
+            </div>
+            <div class="form-group text-right">
+              <button class="btn btn-success btn-sm">Post</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    {% for message in messages_received.all %}
+      <!-- Message header -->
+      <div class="row">
+        <div class="col-6">
+          {% if message.author == profile %}
+          <p class="mc_header">{{message.author.first_name}} {{message.author.last_name}} wrote:</p>
+          {% else %}
+          <p class="mc_header"><a href="/message_board/{{message.author.id}}">{{ message.author.first_name }} {{ message.author.last_name }} </a>wrote:</p>
+          {% endif %}
+        </div>
+        <div class="col-6 text-right">
+          {% if message.edited %}
+          <p class="mc_header"><small>Message last edited on {{message.updated_at}}</small></p>
+          {% else %}
+          <p class="mc_header"><small>Message posted {{message.created_at}}</small></p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Message Content -->
+      <div class="row">
+        <div class="col-12">
+          <p class="message_content">{{ message.content }}</p>
+        </div>
+        {% if user == message.author or user.level == 9 %}
+        <div class="col-12 text-right">
+          <p class="edit_delete_options">
+            <small>
+
+              <!-- Edit message -->
+              <a href="" data-toggle="modal" data-target="#edit{{message.id}}">edit</a>&nbsp|&nbsp
+              <!-- Remove message -->
+              <a href="" data-toggle="modal" data-target="#remove{{message.id}}">delete</a>
+              
+              <!-- Modal for editing message -->
+              <div class="modal fade edit_message_modal" id="edit{{message.id}}" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg" role="document">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      {% if user == message.author %}
+                      <h5 class="modal-title" id="editModalLabel">Edit your message?</h5>
+                      {% else %}
+                      <h5 class="modal-title" id="editModalLabel">Edit message written by {{message.author.first_name}}?</h5>
+                      {% endif %}
+                      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                      </button>
+                    </div>
+                    <div class="modal-body">
+                      <form action="/message_board/edit/{{message.id}}" method="post">
+                        {% csrf_token %}
+                        <textarea class="form-control" name="edited_message">{{message.content}}</textarea>                      
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-dismiss="modal">Back</button>
+                      <button type="submit" class="btn btn-primary">Save changes</button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+               
+              <!-- Modal for deleting a message-->
+              <div class="modal fade" id="remove{{message.id}}" tabindex="-1" role="dialog" aria-labelledby="removeModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      {% if user == message.author %}
+                      <h5 class="modal-title" id="removeModalLabel">Remove your message?</h5>
+                      {% else %}
+                      <h5 class="modal-title" id="removeModalLabel">Remove message written by {{message.author.first_name}}?</h5>
+                      {% endif %}
+                      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                      </button>
+                    </div>
+                    <div class="modal-body">
+                      {% if user == message.author %}
+                      <p class="text-left">You posted this message on {{message.created_at}}<br>
+                        Deleting this message will also remove it's associated comments. Are you sure?</p>
+                      {% else %}
+                      <p class="text-left">This message was posted by {{message.author.first_name}} {{message.author.last_name}} on {{message.created_at}}<br>
+                        Deleting this message will also remove it's associated comments. Are you sure?</p>
+                      {% endif %}
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-dismiss="modal">No</button>
+                      <a href="/message_board/delete/{{message.id}}" class="btn btn-danger">Delete</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+        
+            </small>
+          </p>
+        </div>
+        {% endif %}
+      </div>
+
+    <div id="{{message.id}}_comments_container">
+        {% for comment in message.comments.all %}
+        <!-- comment header -->
+      <div class="row">
+        <div class="col-5 offset-1">
+          <p class="mc_header"><a href="/message_board/{{comment.author.id}}">{{comment.author.first_name}} </a>wrote</p>
+        </div>
+        <div class="col-5 offset-1 text-right">
+          <!-- <p class="mc_header">{{comment.created_at}}</p> -->
+          {% if comment.edited %}
+          <p class="mc_header"><small>Comment last edited on {{comment.updated_at}}</small></p>
+          {% else %}
+          <p class="mc_header"><small>Comment posted {{comment.created_at}}</small></p>
+          {% endif %}
+        </div>
+      </div>
+      <!-- comment content -->
+      <div class="row">
+        <div class="col-11 offset-1">
+          <p class="comment_content">{{comment.content}}</p>
+        </div>
+        {% if user == comment.author or user.level == 9 %}
+        <div class="col-11 offset-1 text-right">
+          <p class="edit_delete_options">
+            <small>
+
+              <!-- Edit comment -->
+              <a href="" data-toggle="modal" data-target="#edit{{comment.id}}">edit</a>&nbsp|&nbsp
+              <!-- Remove comment -->
+              <a href="" data-toggle="modal" data-target="#remove{{comment.id}}">delete</a>
+
+              <!-- Modal for editing comment -->
+              <div class="modal fade" id="edit{{comment.id}}" tabindex="-1" role="dialog" aria-labelledby="editCommentModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg" role="document">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      {% if user == comment.author %}
+                      <h5 class="modal-title" id="editCommentModalLabel">Edit your comment?</h5>
+                      {% else %}
+                      <h5 class="modal-title" id="editCommentModalLabel">Edit comment written by {{comment.author.first_name}}?</h5>
+                      {% endif %}
+                      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                      </button>
+                    </div>
+                    <div class="modal-body">
+                      <form action="/message_board/edit/comment/{{comment.id}}" method="post">
+                        {% csrf_token %}
+                        <textarea class="form-control" name="edited_comment">{{comment.content}}</textarea>                      
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-dismiss="modal">Back</button>
+                      <button type="submit" class="btn btn-primary">Save changes</button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Modal for deleting a comment -->
+              <div class="modal fade" id="remove{{comment.id}}" tabindex="-1" role="dialog" aria-labelledby="removeCommentModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      {% if user == comment.author %}
+                      <h5 class="modal-title" id="removeCommentModalLabel">Remove your comment?</h5>
+                      {% else %}
+                      <h5 class="modal-title" id="removeCommentModalLabel">Remove comment written by {{comment.author.first_name}}?</h5>
+                      {% endif %}
+                      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                      </button>
+                    </div>
+                    <div class="modal-body">
+                      {% if user == comment.author %}
+                      <p class="text-left">You posted this comment on {{comment.created_at}}<br>
+                        Are you sure you want to delete this comment?</p>
+                      {% else %}
+                      <p class="text-left">This comment was posted by {{comment.author.first_name}} {{comment.author.last_name}} on {{comment.created_at}}<br>
+                        Are you sure you want to delete this comment?</p>
+                      {% endif %}
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-dismiss="modal">No</button>
+                      <a href="/message_board/delete/comment/{{comment.id}}" class="btn btn-danger">Delete</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </small>
+          </p>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+      <!-- Leave a comment -->
+      <div class="row">
+        <div class="col-11 offset-1" id="comment_label_container_{{message.id}}">
+          <p id="comment_label_{{message.id}}">Leave a comment:</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-11 offset-1">
+          <form action="/message_board/{{profile.id}}/{{message.id}}/comment" class="comment" id="{{message.id}}" method="post">
+            {% csrf_token %}
+            <input type="hidden" id="{{message.id}}_profile_id" value="{{profile.id}}">
+            <textarea class="form-control comment_textarea" name="comment" id="textarea_{{message.id}}"></textarea>
+            <div class="form-group text-right">
+              <button class="btn btn-success btn-sm comment_button">Post</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    {% endfor %}
+
+
+    </div>
+
+    <!-- jQuery -->
+    <script src="{% static 'jquery-3.5.0.js' %}"></script>
+    
+    <!-- <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script> -->
+
+    <!-- Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+      
+    <!-- bootstrap.js-->
+    <script type="text/javascript" src="{% static 'bootstrap.js' %}"></script>
+
+    <!-- Custom JavaScript -->
+    <!-- <script type="text/javascript" src="script.js"></script> -->
+
+    <script>
+
+      $(".comment").on("submit", function(e){
+        e.preventDefault()
+        messageID = $(this).attr("id") // this is message.id
+        profileID = $(`#${messageID}_profile_id`).val() // this is profile.id
+        textarea_value = $(`#textarea_${messageID}`).val() // this is the form input field
+        if (textarea_value == ""){
+          // this handles input validation (prevents submission of an empty form)
+          $(`#comment_label_container_${messageID}`).html('          <p>Leave a comment: &nbsp&nbsp<small class="comment_error">Cannot submit empty comment</small></p>')
+        }
+        else {
+          // if the form isn't empty, make the ajax request
+            $.ajax({
+            url: `/message_board/${profileID}/${messageID}/comment`, // the url path for posting a comment
+            method: 'post',
+            data: $(this).serialize(),
+            success: function(serverResponse){
+              $(`#${messageID}_comments_container`).html(serverResponse) // replace the contents of the comments div with the serverResponse
+            }
+          })
+        }
+        
+      })
+    </script>
+
+  </body>
+</html>

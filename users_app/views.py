@@ -3,7 +3,7 @@ from . import models
 import bcrypt
 
 ####### Helper Functions ########
-def logged_user(request):
+def logged_user(request):    
     return models.User.objects.filter(id=request.session["user_id"])[0]
 
 def initialize_session(request):
@@ -15,12 +15,18 @@ def initialize_session(request):
     except KeyError:
         request.session["user_id"] = None
 
-def get_context(request, index=False):
+def get_context(request, index=False, users=False):
     if index:
         if request.session["user_id"] == None:
             context = {}
         else:    
             context = {"user": logged_user(request),}
+        return context
+    if users:
+        context = {
+            "user": logged_user(request),
+            "users": models.User.objects.all(),
+        }
         return context
     else:
         try:
@@ -36,6 +42,8 @@ def get_context(request, index=False):
 
 ####### Helper Functions ########
 
+# Login and Registration Functions:
+
 def index(request):
     """
     GET -> gets home page
@@ -43,6 +51,7 @@ def index(request):
     initialize_session(request)
     context = get_context(request, index=True)    
     return render(request, "index.html", context)
+# GET -> get home page
 
 def login(request):
     """
@@ -51,6 +60,18 @@ def login(request):
     """
     
     if request.POST:
+        # authenticate user credentials from anywhere on the site:
+        try:
+            request.POST["auth"]
+            errors = models.User.objects.login_validations(request.POST)
+            if len(errors) == 0:
+                return redirect(request.POST["auth"])
+            else:
+                return redirect(request.POST["origin"])
+        except KeyError:
+            pass
+
+        # login attempt made from login page:
         errors = models.User.objects.login_validations(request.POST)
         if len(errors) > 0:
             request.session["errors"] = errors    
@@ -63,6 +84,8 @@ def login(request):
         context = get_context(request)    
         request.session["errors"] = None # Reset errors
         return render(request, "login.html", context)
+# GET -> gets login page 
+# POST -> authenticates login attempt
 
 def registration(request):
     """
@@ -85,16 +108,43 @@ def registration(request):
             
             if len(models.User.objects.all()) == 1:
                 new_user.level = 9 # make the first user to register an administrator    
-            
+            else:
+                try:
+                    request.POST["admin"]
+                    new_user.level = 9
+                except KeyError:
+                    new_user.level = 1
+
             new_user.save()
 
             return redirect("/login")
     
     else: # request.GET
-        context = get_context(request)
-        request.session["errors"] = None # Reset errors
-        return render(request, "registration.html", context)
+        # restrict access to this url for users that are already logged-in, unless they are administrators
+        if request.session["user_id"] == None:
+            context = get_context(request)
+            request.session["errors"] = None # Reset errors
+            return render(request, "registration.html", context)
+        
+        elif logged_user(request).level != 9:
+            return redirect("/")
+
+        else:
+            context = get_context(request)
+            request.session["errors"] = None # Reset errors
+            return render(request, "registration.html", context)
+# GET -> gets registration page
+# POST -> authenticates registration attempt                
 
 def logout(request):
     del request.session["user_id"]
     return redirect("/")
+# POST -> destroys session
+
+# Users Functions
+def users(request):
+    context = get_context(request, users=True)
+    return render(request, "users.html", context)
+
+def user(request, user_id):
+    pass

@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge,chrome=1">
+
+    {% load static %}
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'bootstrap.css' %}">
+
+    <!-- Custom CSS stylesheet-->
+    <!-- <link rel="stylesheet" type="text/css" href="{% static 'style.css' %}"> -->
+
+    <title>User {{profile.id}}'s Profile
+    </title>
+
+    <style>
+
+      .top_row {
+        margin-top: 30px;
+        margin-bottom: 20px;
+      }
+      button {
+        min-width: 90px;
+      }
+
+      textarea { 
+        margin-top: 5px;
+        min-height: 120px;
+        max-height: 150px;
+        overflow: auto;
+      }
+
+      .location_row_header {
+        margin-top: -30px;
+      }
+      .location_row {
+        margin-top: -20px;
+      }
+
+      .error_message {
+        color: red;
+      }
+
+      .profile_image {
+        min-height: 150px;
+        background-size: contain;
+        background-position: center;
+        background-repeat: no-repeat;
+      }
+
+    </style>
+
+  </head>
+
+  <body>
+
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-md navbar-light bg-light">
+      <a class="navbar-brand" href="/">User Dashboard</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <a class="navbar-nav mr-sm-0 nav-link" href="/dashboard">Dashboard</a>
+        <a class="navbar-nav mr-auto nav-link" href="/message_board/{{user.id}}">Wall</a>
+      {% if request.session.user_id == None %}
+        <a class="navbar-nav mr-sm-0 nav-link" href="/signin">Signin</a>
+      {% else %}
+      {% if user.level == 9%}
+      <a class="navbar-nav mr-sm-0 nav-link" href="/dashboard/edit_profile/{{user.id}}">{{user.first_name}} {{user.last_name}} (admin)</a>
+      {% else %}
+      <a class="navbar-nav mr-sm-0 nav-link" href="/dashboard/edit_profile/{{user.id}}">{{user.first_name}} {{user.last_name}}</a>
+      {% endif %}
+      <a class="navbar-nav mr-sm-0 nav-link" href="/logoff">Logoff</a>
+      {% endif %}
+      </div>
+    </nav>
+
+    <!-- Container -->
+    <div class="container">
+      
+      <div class="row top_row">
+        <div class="col-7 col-md-5 offset-md-2">
+          {% if user == profile %}
+          <h3>Edit your profile</h3>
+          {% else %}
+          <h3>Edit User {{profile.id}}'s profile</h3>
+          {% endif %}
+        </div>
+
+        <div class="col-5 col-md-3 text-right">
+          <a href="/dashboard" class="btn btn-primary btn-sm">Return to Dashboard</a>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-10 offset-1 col-md-8 offset-md-2">
+          <form enctype="multipart/form-data" action="/dashboard/update_profile/{{profile.id}}" method="post">
+            {% csrf_token %}
+
+            <!-- Profile Image anf Header-->
+            <div class="form-group row">
+              <!-- Profile Image -->
+              <div class="col-6 offset-3 col-md-4 offset-md-0 col-xl-3">
+                <div class="row">
+
+                  {% if profile.profile_photo %}
+                  <div class="col-12 profile_image" style="background-image: url('{{ profile.profile_photo.url }}')"></div>
+                  {% else %}
+                  <div class="col-12 profile_image" style="background-image: url('{{ profile.default_photo.url }}')"></div>
+                  {% endif %}
+
+                </div>
+
+              </div>
+              <!-- Header -->
+              <div class="col-10 offset-2 col-md-8 offset-md-0 col-xl-9 profile_header_content">
+                
+                <!-- Name -->
+                <div class="row">
+                  <div class="col-12">
+                    <h1>{{profile.first_name}} {{profile.last_name}}</h1>
+                  </div>
+                </div>
+
+                <!-- Location -->
+                <div class="row">
+                  <div class="col-12">
+                    {% if profile.city != "" and profile.state != "" and profile.country != ""%}
+                    <h3>{{profile.city}}, {{profile.state}}, {{profile.country}}</h3>
+                    {% else %}
+                    <h5>Member at large</h5>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <!-- Member stats -->
+                <div class="row">
+                  <div class="col-12">
+                    <h5>Member since {{profile.created_at|date:"M d, Y"}}</h5>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-12">
+                    <p>Posts made: {{ profile.messages_posted.all|length }} Comments made: {{ profile.comments.all|length }}</p>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <div class="form-group row">
+
+              <!-- Upload new profile picture -->
+              <div class="col-12">
+                <div class="form-group row">
+                  <label class="col-form-label col-12 col-md-6">Upload a new profile image:</label>
+                  <div class="form-group col-12 col-md-6">
+                    <input type="file" class="form-control-file form-control-sm" name="profile_image_upload">
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group col-6">
+                <div class="form-group">
+                  <label>First Name</label>
+                  {% if errors.first_name %}
+                  &nbsp<small class="error_message">{{ errors.first_name }}</small>
+                  {% endif %}
+                  <input type="text" class="form-control" name="first_name" value={{profile.first_name}}>
+                </div>
+                <div class="form-group">
+                  <label>Last Name</label>
+                  {% if errors.last_name %}
+                  &nbsp<small class="error_message">{{ errors.last_name }}</small>
+                  {% endif %}
+                  <input type="text" class="form-control" name="last_name" value={{profile.last_name}}>
+                </div>
+                <div class="form-group">
+                  <label>Email Address</label>
+                  {% if errors.email %}
+                  &nbsp<small class="error_message">{{ errors.email }}</small>
+                  {% endif %}
+                  <input type="text" class="form-control" name="email" value={{profile.email}}>
+                </div>
+              </div>
+              <div class="form-group col-6">
+                <div class="form-group">
+                  <label>New Password</label>
+                  {% if errors.password %}
+                  &nbsp<small class="error_message">{{ errors.password }}</small>
+                  {% endif %}
+                  <input type="password" class="form-control" name="password">
+                </div>
+                <div class="form-group">
+                  <label>Confirm Password</label>
+                  {% if errors.pw_confirm %}
+                  &nbsp<small class="error_message">{{ errors.pw_confirm }}</small>
+                  {% endif %}
+                  <input type="password" class="form-control" name="pw_confirm">
+                </div>
+                {% if user.level == 9 and user != profile %}
+                <div class="form-group">
+                  <label>User Level</label>
+                  <select name="user_level" class="form-control">
+                    {% if profile.level == 9%}
+                      <option>Admin</option>
+                      <option>Normal</option>
+                    {% else %}
+                      <option>Normal</option>
+                      <option>Admin</option>
+                    {% endif %}
+                  </select>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="form-group row location_row_header">
+              <div class="col-10 offset-1">
+                <p><small>NOTE: city, state/province, and country are optional; however, all three fields are required if you 
+                  want to share your location. Otherwise your location will default to "Member at large".
+                </small></p>
+              </div>
+            </div>
+
+            <!-- City, State/Province, Country -->
+            <div class="form-group row location_row">
+              <div class="col-4">
+                <label>City</label>
+                <input type="text" class="form-control" name="city" value="{{profile.city}}">
+              </div>
+              <div class="col-4">
+                <label>State/Province</label>
+                <input type="text" class="form-control" name="state" value="{{profile.state}}">
+              </div>
+              <div class="col-4">
+                <label>Country</label>
+                <input type="text" class="form-control" name="country" value="{{profile.country}}">
+              </div>
+            </div>
+
+
+            <div class="form-group row description_row">
+              <div class="form-group col-12">
+                <label>Description:</label>
+                <textarea class="form-control" name="description">{{profile.description}}</textarea>
+              </div>
+            </div>
+            <div class="form-group row">
+              <div class="form-group col-12 text-right">
+                <button type= "submit" class="btn btn-primary btn-sm">Save changes</button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+
+    </div>
+
+  
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+
+    <!-- Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+      
+    <!-- bootstrap.js-->
+    <script type="text/javascript" src="{% static 'bootstrap.js' %}"></script>
+
+    <!-- Custom JavaScript -->
+    <!-- <script type="text/javascript" src="script.js"></script> -->
+
+  </body>
+</html>
