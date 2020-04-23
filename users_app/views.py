@@ -2,9 +2,35 @@ from django.shortcuts import render, redirect
 from . import models
 import bcrypt
 
+##### DEVELOPMENT ######
+def display_post(request):
+    print("..........................")
+    print("Printing data from request.POST.......")
+    for k,v in request.POST.items():
+        print(f"Key: {k}, Value: {v}")
+    print("..........................")
+    print("Printing data from request.FILES.......")
+    if request.FILES == {}:
+        print("No files uploaded")
+    else:
+        for k,v in request.FILES.items():
+            print(f"Key: {k}, Value: {v}")
+    print("..........................")
+
+##### DEVELOPMENT ######
+
+
 ####### Helper Functions ########
+
 def logged_user(request):    
+    """ Get logged-in User object """
     return models.User.objects.filter(id=request.session["user_id"])[0]
+
+def is_admin(request):
+    """ Returns True if logged-in user is an admin, False otherwise """
+    if request.session["user_id"] == None:
+        return False
+    return logged_user(request).level == 9
 
 def initialize_session(request):
     try:
@@ -116,6 +142,9 @@ def registration(request):
                     new_user.level = 1
 
             new_user.save()
+            
+            if is_admin(request):
+                return redirect("/users")
 
             return redirect("/login")
     
@@ -146,5 +175,67 @@ def users(request):
     context = get_context(request, users=True)
     return render(request, "users.html", context)
 
-def user(request, user_id):
-    pass
+def user(request, profile_id):
+
+    if request.POST:
+        display_post(request)
+
+        ###### a. Handle Edit to Profile ######
+        # verify credentials
+        user = {
+            "email": logged_user(request).email,
+            "password": request.POST["current_password"]
+        }
+        errors = models.User.objects.login_validations(user)
+        if len(errors) > 0:
+            print("Incorrect password rerouting to user profile page")
+            # user entered the wrong password
+            return redirect(f"/user/{profile_id}")
+        
+        # conduct input validation 
+        errors = models.User.objects.update_profile_validations(request.POST, profile_id)
+        if len(errors) > 0:
+            print("Invalid input, rerouting to user profile page")
+            # user entered an invalid email address
+            return redirect(f"/user/{profile_id}")
+
+        # update profile
+        print("Updating profile....")
+        profile = models.User.objects.filter(id=profile_id)[0]
+        profile.first_name = request.POST["first_name"]
+        profile.last_name = request.POST["last_name"]
+        profile.email = request.POST["email"]
+        
+        if request.POST["password"] != "":
+            profile.password = bcrypt.hashpw(request.POST["password"].encode(), bcrypt.gensalt()).decode()
+        
+        if logged_user(request) != profile:
+            if request.POST["user_level"] == "Admin":
+                profile.level = 9
+            else:
+                profile.level = 1
+        if request.POST["city"] != profile.city:
+            profile.city = request.POST["city"]
+        if request.POST["state"] != profile.state:
+            profile.state = request.POST["state"]
+        if request.POST["country"] != profile.country:
+            profile.country = request.POST["country"]
+        if request.FILES != {}:
+            # delete the old profile image
+            profile.profile_photo.delete()
+            # change the user's profile image
+            profile.profile_photo = request.FILES["profile_image_upload"]
+        profile.description = request.POST["description"]
+        profile.save()
+        return redirect(f"/user/{profile_id}")
+
+
+    # GET request
+    else:
+        profile = models.User.objects.filter(id=profile_id)[0]
+        context = {
+            "user": logged_user(request),
+            "profile": profile,
+            "messages": profile.messages_received.all().order_by("-created_at"),
+        }
+        return render(request,"user.html", context)

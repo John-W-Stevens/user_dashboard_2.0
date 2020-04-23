@@ -90,7 +90,7 @@
 
     </style>
 
-    <title>Message board</title>
+    <title>User Profile Page / Messageboard</title>
 
   </head>
   
@@ -105,7 +105,7 @@
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
       {% if request.session.user_id == None %}
         <a class="navbar-nav mr-auto nav-link disabled" href="/dashboard">Dashboard</a>
-        <a class="navbar-nav mr-sm-0 nav-link" href="/signin">Signin</a>
+        <a class="navbar-nav mr-sm-0 nav-link" href="/login">Signin</a>
       {% else %}
         <a class="navbar-nav mr-sm-0 nav-link" href="/dashboard">Dashboard</a>
         <a class="navbar-nav mr-auto nav-link" href="/message_board/{{user.id}}">Wall</a>
@@ -114,7 +114,7 @@
       {% else %}
         <a class="navbar-nav mr-sm-0 nav-link" href="/dashboard/edit_profile/{{user.id}}">{{user.first_name}} {{user.last_name}}</a>
       {% endif %}
-        <a class="navbar-nav mr-sm-0 nav-link" href="/logoff">Logoff</a>
+        <a class="navbar-nav mr-sm-0 nav-link" href="/logout">Logoff</a>
       {% endif %}
       </div>
     </nav>
@@ -133,9 +133,202 @@
 
         <div class="col-12 col-md-9 col-lg-10">
           <div class="row">
-            <div class="col-12">
+            
+            <div class="col-9">
               <h3>{{profile.first_name}} {{profile.last_name}}</h3>
             </div>
+            <!-- Edit option -->
+            {% if user == profile or user.level == 9%}
+            <div class="col-3 text-right">
+              <!-- Modal Button -->
+              <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#edit_profile">edit profile</button>
+              <!-- Modal for editing message -->
+              <div class="modal fade text-left" id="edit_profile" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg" role="document">
+                  <div class="modal-content">
+
+                    <div class="modal-header">
+                      <h3 class="modal-title" id="editModalLabel">Edit Profile</h3>
+                      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                      </button>
+                    </div>
+                    
+                    <div class="modal-body">
+                      <form enctype="multipart/form-data" action="/user/{{profile.id}}" method="post" id="edit_profile_form">
+                        {% csrf_token %}
+                        
+                        <!-- Profile Image and Header-->
+                        <div class="form-group row">
+                          <!-- Profile Image -->
+                          <div class="col-6 offset-3 col-md-4 offset-md-0 col-xl-3">
+                            <div class="row">
+                              {% if profile.profile_photo %}
+                              <!-- <div class="col-12 profile_image" style="background-image: url('{{ profile.profile_photo.url }}')"></div> -->
+                              <div class="col-12">
+                                <img src="{{profile.profile_photo.url}}" alt="profile photo">
+                              </div>
+                              {% else %}
+                              <!-- <div class="col-12 profile_image" style="background-image: url('{{ profile.default_photo.url }}')"></div> -->
+                              <div class="col-12">
+                                <img src="{{profile.default_photo.url}}" alt="profile photo">
+                              </div>
+                              {% endif %}
+                            </div>
+                          </div>
+
+                          <!-- Header -->
+                          <div class="col-10 offset-2 col-md-8 offset-md-0 col-xl-9 profile_header_content">
+                            
+                            <!-- Name -->
+                            <div class="row">
+                              <div class="col-12">
+                                <h1>{{profile.first_name}} {{profile.last_name}}</h1>
+                              </div>
+                            </div>
+
+                            <!-- Location -->
+                            <div class="row">
+                              <div class="col-12">
+                                {% if profile.city != "" and profile.state != "" and profile.country != ""%}
+                                <h3>{{profile.city}}, {{profile.state}}, {{profile.country}}</h3>
+                                {% else %}
+                                <h5>Member at large</h5>
+                                {% endif %}
+                              </div>
+                            </div>
+
+                            <!-- Member stats -->
+                            <div class="row">
+                              <div class="col-12">
+                                <h5>Member since {{profile.created_at|date:"M d, Y"}}</h5>
+                              </div>
+                            </div>
+
+                            <div class="row">
+                              <div class="col-12">
+                                <p>Posts made: {{ profile.messages_posted.all|length }} Comments made: {{ profile.comments.all|length }}</p>
+                              </div>
+                            </div>
+
+                          </div>
+                        </div>
+
+                        <div class="form-group row">
+
+                          <!-- Upload new profile picture -->
+                          <div class="col-12">
+                            <div class="form-group row">
+                              <label class="col-form-label col-12 col-md-6">Upload a new profile image:</label>
+                              <div class="form-group col-12 col-md-6">
+                                <input type="file" class="form-control-file form-control-sm" name="profile_image_upload">
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="form-group col-6">
+                            <div class="form-group">
+                              <div id="first_name_label">
+                                <label>First Name</label>
+                              </div>
+                              <input type="text" class="form-control" name="first_name" value={{profile.first_name}} id="first_name">
+                            </div>
+                            <div class="form-group">
+                              <div id="last_name_label">
+                                <label>Last Name</label>
+                              </div>
+                              <input type="text" class="form-control" name="last_name" value={{profile.last_name}} id="last_name">
+                            </div>
+                            <div class="form-group">
+                              <div id="email_label">
+                                <label>Email Address</label>
+                              </div>
+                              <input type="text" class="form-control" name="email" value={{profile.email}} id="email">
+                            </div>
+                          </div>
+                          <div class="form-group col-6">
+                            <div class="form-group">
+                              <div id="new_password_label">
+                                <label>New Password</label>
+                              </div>
+                              <input type="password" class="form-control" name="password" id="new_password">
+                            </div>
+                            <div class="form-group">
+                              <div id="new_password_confirm_label">
+                                <label>Confirm Password</label>
+                              </div>
+                              <input type="password" class="form-control" name="pw_confirm" id="new_password_confirm">
+                            </div>
+                            {% if user.level == 9 and user != profile %}
+                            <div class="form-group">
+                              <label>User Level</label>
+                              <select name="user_level" class="form-control" id="user_level">
+                                {% if profile.level == 9%}
+                                  <option>Admin</option>
+                                  <option>Normal</option>
+                                {% else %}
+                                  <option>Normal</option>
+                                  <option>Admin</option>
+                                {% endif %}
+                              </select>
+                            </div>
+                            {% endif %}
+                          </div>
+                        </div>
+
+                        <div class="form-group row location_row_header">
+                          <div class="col-10 offset-1">
+                            <p><small>NOTE: city, state/province, and country are optional; however, all three fields are required if you 
+                              want to share your location. Otherwise your location will default to "Member at large".
+                            </small></p>
+                          </div>
+                        </div>
+
+                        <!-- City, State/Province, Country -->
+                        <div class="form-group row location_row">
+                          <div class="col-4">
+                            <label>City</label>
+                            <input type="text" class="form-control" name="city" value="{{profile.city}}" id="city">
+                          </div>
+                          <div class="col-4">
+                            <label>State/Province</label>
+                            <input type="text" class="form-control" name="state" value="{{profile.state}}" id="state">
+                          </div>
+                          <div class="col-4">
+                            <label>Country</label>
+                            <input type="text" class="form-control" name="country" value="{{profile.country}}" id="country">
+                          </div>
+                        </div>
+
+                        <div class="form-group row">
+                          <div class="col-10 offset-1">
+                            <label>Description</label>
+                            <textarea class="form-control" name="description" id="description_textarea"></textarea>
+                          </div>
+                        </div>
+
+                        <div class="col-6 offset-3">
+                          <div id="auth_password_label">
+                            <label>Verify current password:</label>
+                          </div>
+                            <input type="hidden" id="profile_id" name="profile_id" value="{{profile.id}}">
+                            <input type="password" class="form-control" placeholder="* required *" name="current_password" id="auth_password">
+                        </div>
+                    </div>
+                    
+                    <!-- modal-footer -->
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Back</button>
+                        <button type="button" class="btn btn-primary" id="edit_profile_form_button">Save changes</button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+            {% endif %}
+
           </div>
           <div class="row">
             {% if profile.city and profile.state and profile.country %}
@@ -418,7 +611,7 @@
     <script type="text/javascript" src="{% static 'bootstrap.js' %}"></script>
 
     <!-- Custom JavaScript -->
-    <!-- <script type="text/javascript" src="script.js"></script> -->
+    <script type="text/javascript" src="{% static 'user_script1.js' %}"></script>
 
     <script>
 

@@ -46,6 +46,7 @@ class UserManager(models.Manager):
                 errors["password"] = "Invalid password"
         return errors
 
+
     def confirm_credentials(self, sessionData, postData):
         user = User.objects.filter(id=sessionData["user_id"])[0]
         pw = postData["password"]

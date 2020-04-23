@@ -122,5 +122,5 @@ STATIC_URL = '/static/'
 
 # Add these two lines (to use media):
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, "user_dashboard/media")
+MEDIA_ROOT = os.path.join(BASE_DIR, "user_dashboard_v2/media")
 
