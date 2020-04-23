@@ -37,29 +37,28 @@
 
   <body>
 
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-md navbar-light bg-light">
+     <!-- Navbar -->
+     <nav class="navbar navbar-expand-md navbar-light bg-light">
       <a class="navbar-brand" href="/">User Dashboard</a>
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
       {% if request.session.user_id == None %}
-        <a class="navbar-nav mr-auto nav-link disabled" href="/dashboard">Dashboard</a>
-        <a class="navbar-nav mr-sm-0 nav-link" href="/login">Signin</a>
+        <a class="navbar-nav mr-auto nav-link disabled" href="/users"></a>
+        <a class="navbar-nav mr-lg-2 nav-link" href="/login">Signin</a>
       {% else %}
-        <a class="navbar-nav mr-sm-0 nav-link" href="/dashboard">Dashboard</a>
-        <a class="navbar-nav mr-auto nav-link" href="/message_board/{{user.id}}">Wall</a>
+        <a class="navbar-nav mr-auto nav-link" href="/users">Dashboard</a>
       {% if user.level == 9%}
-        <a class="navbar-nav mr-sm-0 nav-link" href="/dashboard/edit_profile/{{user.id}}">{{user.first_name}} {{user.last_name}} (admin)</a>
+        <a class="navbar-nav mr-sm-0 nav-link" href="/user/{{user.id}}">{{user.first_name}} {{user.last_name}} (admin)</a>
       {% else %}
-        <a class="navbar-nav mr-sm-0 nav-link" href="/dashboard/edit_profile/{{user.id}}">{{user.first_name}} {{user.last_name}}</a>
+        <a class="navbar-nav mr-sm-0 nav-link" href="/user/{{user.id}}">{{user.first_name}} {{user.last_name}}</a>
       {% endif %}
         <a class="navbar-nav mr-sm-0 nav-link" href="/logout">Logoff</a>
       {% endif %}
       </div>
     </nav>
-
+    
     <!-- Container -->
     <div class="container">
 
@@ -148,36 +147,8 @@
                 
                 {% if user.level == 9%}
                   <td>
-                    <!-- edit profile original -->
-                    <!-- <a href="/dashboard/edit_profile/{{profile.id}}">edit</a> | -->
-                    
                     <!-- edit profile -->
-                    <a href="" class="" data-toggle="modal" data-target="#process_credentials_edit_user_{{profile.id}}">Edit</a> |
-                    <!-- Modal -->
-                    <div class="modal fade bd-example-modal-sm" id="process_credentials_edit_user_{{profile.id}}" tabindex="-1" role="dialog" aria-labelledby="process_credentialsEditModalLabel" aria-hidden="true">
-                      <div class="modal-dialog modal-sm" role="document">
-                        <div class="modal-content">
-                          <div class="modal-header">
-                            <h6 class="modal-title" id="process_credentialsEditModalLabel">Enter your password:</h6>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                              <span aria-hidden="true">&times;</span>
-                            </button>
-                          </div>
-                          <div class="modal-body">
-                            <form action="/dashboard/process_credentials" method="post">
-                              {% csrf_token %}
-                              <input type="hidden" name="edit_user">
-                              <input type="hidden" name="profile_id" value="{{profile.id}}"> 
-                              <input type="password" name="password" class="form-control">
-                          </div>
-                          <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Back</button>
-                            <button class="btn btn-primary btn-sm" type="submit">Submit</button>
-                            </form>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    <a href="/user/{{profile.id}}">View</a>  |
                   
                     <a href="" data-toggle="modal" data-target="#remove{{profile.id}}">Remove</a>
 

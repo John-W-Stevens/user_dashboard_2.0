@@ -21,8 +21,8 @@
         width: 150px;
       }
 
-      .top_row {
-        margin-top: 15px;
+      .header_row {
+        margin-top: 40px;
       }
       .second_row {
         margin-top: 25px;
@@ -104,23 +104,22 @@
       </button>
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
       {% if request.session.user_id == None %}
-        <a class="navbar-nav mr-auto nav-link disabled" href="/dashboard">Dashboard</a>
-        <a class="navbar-nav mr-sm-0 nav-link" href="/login">Signin</a>
+        <a class="navbar-nav mr-auto nav-link disabled" href="/users"></a>
+        <a class="navbar-nav mr-lg-2 nav-link" href="/login">Signin</a>
       {% else %}
-        <a class="navbar-nav mr-sm-0 nav-link" href="/dashboard">Dashboard</a>
-        <a class="navbar-nav mr-auto nav-link" href="/message_board/{{user.id}}">Wall</a>
+        <a class="navbar-nav mr-auto nav-link" href="/users">Dashboard</a>
       {% if user.level == 9%}
-        <a class="navbar-nav mr-sm-0 nav-link" href="/dashboard/edit_profile/{{user.id}}">{{user.first_name}} {{user.last_name}} (admin)</a>
+        <a class="navbar-nav mr-sm-0 nav-link" href="/user/{{user.id}}">{{user.first_name}} {{user.last_name}} (admin)</a>
       {% else %}
-        <a class="navbar-nav mr-sm-0 nav-link" href="/dashboard/edit_profile/{{user.id}}">{{user.first_name}} {{user.last_name}}</a>
+        <a class="navbar-nav mr-sm-0 nav-link" href="/user/{{user.id}}">{{user.first_name}} {{user.last_name}}</a>
       {% endif %}
         <a class="navbar-nav mr-sm-0 nav-link" href="/logout">Logoff</a>
       {% endif %}
       </div>
     </nav>
-
+    
     <div class="container">
-      <div class="row top_row">
+      <div class="row header_row">
         
         <!-- Profile photo -->
         <div class="col-6 offset-3 col-md-3 offset-md-0 col-lg-2">
