@@ -176,12 +176,16 @@ def users(request):
     return render(request, "users.html", context)
 
 def user(request, profile_id):
-
+    """
+    GET -> displays the user profile page
+    POST -> handles profile edits, deletions, messages, and comments
+    """
     if request.POST:
         display_post(request)
 
         ###### a. Handle Edit to Profile ######
-        # verify credentials
+        
+        ########### Authenticate Credentials ###########
         user = {
             "email": logged_user(request).email,
             "password": request.POST["current_password"]
@@ -190,15 +194,38 @@ def user(request, profile_id):
         if len(errors) > 0:
             print("Incorrect password rerouting to user profile page")
             # user entered the wrong password
-            return redirect(f"/user/{profile_id}")
-        
-        # conduct input validation 
+            try:
+                request.POST["destroy"]
+                return redirect("/users")
+            except KeyError:
+                return redirect(f"/user/{profile_id}")
+        ########### Authenticate Credentials ###########
+
+        ############# Account Deletion ###############
+        try:
+            request.POST["destroy"]
+            print("Deleting account....")
+            profile = models.User.objects.filter(id=profile_id)[0]
+            if user == profile:
+                # the user is deleting their own account
+                profile.delete()
+                return redirect("/")
+            else:
+                profile.delete()
+                return redirect("/users")
+        except KeyError:
+            pass
+        ############# Account Deletion ###############
+
+        ############# Input Validation for Account Edit #############
         errors = models.User.objects.update_profile_validations(request.POST, profile_id)
         if len(errors) > 0:
             print("Invalid input, rerouting to user profile page")
             # user entered an invalid email address
             return redirect(f"/user/{profile_id}")
+        ############# Input Validation for Account Edit #############
 
+        ############# Account Update ##############
         # update profile
         print("Updating profile....")
         profile = models.User.objects.filter(id=profile_id)[0]
@@ -228,6 +255,7 @@ def user(request, profile_id):
         profile.description = request.POST["description"]
         profile.save()
         return redirect(f"/user/{profile_id}")
+        ############# Account Update ##############
 
 
     # GET request

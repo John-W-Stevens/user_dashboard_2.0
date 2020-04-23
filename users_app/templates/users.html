@@ -71,7 +71,7 @@
         {% endif %}
         </div>
 
-      {% if user.level == 9 %}
+        {% if user.level == 9 %}
         <div class="col-4 text-right">    
           <!-- Verify credentials -->
           <a class="btn btn-sm btn-primary add_user_btn" data-toggle="modal" data-target="#process_credentials">Add User</a>
@@ -102,13 +102,13 @@
             </div>
           </div>
         </div>
-      {% endif %}
+        {% endif %}
       
       </div>
 
       <!-- Manage Users Administrative Dashboard -->
+      {% if user.level == 9 %}
       <div class="row">
-        {% if user.level == 9 %}
         <div class="col-12">
           <div class="table-responsive-lg">
             <table class="table table-striped table-hover table-sm table-bordered">
@@ -147,32 +147,10 @@
                 
                 {% if user.level == 9%}
                   <td>
-                    <!-- edit profile -->
+                    <!-- View Profile -->
                     <a href="/user/{{profile.id}}">View</a>  |
-                  
+                    <!-- Delete Profile -->
                     <a href="" data-toggle="modal" data-target="#remove{{profile.id}}">Remove</a>
-
-                      <!-- Modal -->
-                      <!-- <div class="modal fade" id="remove{{profile.id}}" tabindex="-1" role="dialog" aria-labelledby="removeModalLabel" aria-hidden="true">
-                        <div class="modal-dialog" role="document">
-                          <div class="modal-content">
-                            <div class="modal-header">
-                              <h5 class="modal-title" id="removeModalLabel">Remove {{profile.first_name}} {{profile.last_name}}?</h5>
-                              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                              </button>
-                            </div>
-                            <div class="modal-body">
-                              <p>Deleting this account will remove all it's associated posts, messages, and comments. Are you sure?</p>
-                            </div>
-                            <div class="modal-footer">
-                              <button type="button" class="btn btn-secondary" data-dismiss="modal">No</button>
-                              <a href="/dashboard/delete_profile/{{profile.id}}" class="btn btn-danger">Delete</a>
-                            </div>
-                          </div>
-                        </div>
-                      </div> -->
-                      
                       <div class="modal fade" id="remove{{profile.id}}" tabindex="-1" role="dialog" aria-labelledby="removeModalLabel" aria-hidden="true">
                         <div class="modal-dialog" role="document">
                           <div class="modal-content">
@@ -183,22 +161,25 @@
                               </button>
                             </div>
                             <div class="modal-body">
-                              <p>Deleting this account will remove all it's associated posts, messages, and comments. Are you sure?</p>
-                              <form action="/dashboard/delete_profile/{{profile.id}}" method="post">
+                              <p>Deleting this account will remove all it's associated posts and comments.</p>
+                              <form action="/user/{{profile.id}}" method="post">
                                 {% csrf_token %}
-                                <label>Enter your password:</label>
-                                <input type="password" class="form-control" name="password">
+                                <div class="form-group row">
+                                  <label class="col-6 offset-3">Enter your password:</label>
+                                  <div class="col-6 offset-3">
+                                    <input type="hidden" name="destroy">
+                                    <input type="password" class="form-control" name="current_password">
+                                  </div>
+                                </div>
                               </div>
                               <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Back</button>
-                                <button type="submit" class="btn btn-danger">Delete</button>
+                                <button class="btn btn-danger">Delete</button>
                               </form>
                             </div>
                           </div>
                         </div>
                       </div>
-
-
                   </td>
                 {% endif %}
                 </tr>
@@ -207,29 +188,9 @@
             </table>
           </div>
         </div>
-        {% endif %}
       </div>
+      {% endif %}
 
-      <!-- Modal -->
-      <div class="modal fade" id="remove" tabindex="-1" role="dialog" aria-labelledby="removeModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="removeModalLabel">Remove this user?</h5>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-              </button>
-            </div>
-            <div class="modal-body">
-              {{profile.first_name}}
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-dismiss="modal">No</button>
-              <button type="button" class="btn btn-danger ">Delete</button>
-            </div>
-          </div>
-        </div>
-      </div>
 
     </div>
 
