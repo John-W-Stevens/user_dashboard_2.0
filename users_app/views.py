@@ -182,9 +182,71 @@ def user(request, profile_id):
     """
     if request.POST:
         display_post(request)
+        ########### Post Message ##########
+        try:
+            request.POST["new_message"]
+            profile = models.User.objects.filter(id=profile_id)[0]
+            new_message = models.Message.objects.create(content=request.POST["message"], recipient=profile, author=logged_user(request))
+            new_message.save()
+            return redirect(f"/user/{profile_id}")
+        
+        except KeyError:
+            pass
+
+        ########### Post Comment ###########
+        try:
+            request.POST["new_comment"]
+            profile = models.User.objects.filter(id=profile_id)[0]
+            print("Got profile")
+            message = models.Message.objects.filter(id= int(request.POST["message_id"]))[0]
+            print("Got message")
+            new_comment = models.Comment.objects.create(content=request.POST["comment"], author=logged_user(request),message=message )
+            new_comment.save()
+            context = {
+                "user": logged_user(request),
+                "message": models.Message.objects.filter(id=int(request.POST["message_id"]))[0]
+            }
+            return render(request, "comments.html", context)
+            # return redirect(f"/user/{profile.id}")
+
+        except KeyError:
+            pass
+
+        ########### Edit Comment #############
+        try:
+            request.POST["edit_comment"]
+            print("We are making an edit to a comment")
+
+            # handle ajax request to update comments
+            comment = models.Comment.objects.filter(id=int(request.POST["comment_id"]))[0]
+            comment.content = request.POST["edited_comment"]
+            comment.save()
+
+            context = {
+                "user": logged_user(request),
+                "message": models.Message.objects.filter(id=int(request.POST["message_id"]))[0]
+            }
+            return render(request, "comments.html", context)
+        except KeyError:
+            pass
+
+        ########### Delete Comment #############
+        try:
+            request.POST["delete_comment"]
+            print("We are deleting a comment")
+
+            comment = models.Comment.objects.filter(id=int(request.POST["comment_id"]))[0]
+            comment.delete()
+            context = {
+                "user": logged_user(request),
+                "message": models.Message.objects.filter(id=int(request.POST["message_id"]))[0]
+            }
+            return render(request, "comments.html", context)
+        except KeyError:
+            pass
 
         ###### a. Handle Edit to Profile ######
-        
+
         ########### Authenticate Credentials ###########
         user = {
             "email": logged_user(request).email,
@@ -258,6 +320,7 @@ def user(request, profile_id):
         ############# Account Update ##############
 
 
+
     # GET request
     else:
         profile = models.User.objects.filter(id=profile_id)[0]
@@ -267,3 +330,4 @@ def user(request, profile_id):
             "messages": profile.messages_received.all().order_by("-created_at"),
         }
         return render(request,"user.html", context)
+

@@ -1,0 +1,30 @@
+{% for comment in message.comments.all %}
+        <!-- comment header -->
+      <div class="row">
+        <div class="col-5 offset-1">
+          <p class="mc_header"><a href="/user/{{comment.author.id}}">{{comment.author.first_name}}</a>&nbspcommented:</p>
+        </div>
+        <div class="col-5 offset-1 text-right">
+          {% if comment.edited %}
+          <p class="mc_header"><small>Comment last edited on {{comment.updated_at}}</small></p>
+          {% else %}
+          <p class="mc_header"><small>Comment posted {{comment.created_at}}</small></p>
+          {% endif %}
+        </div>
+      </div>
+      <!-- comment content -->
+      <div class="row">
+        <div class="col-11 offset-1">
+          <p class="comment_content">{{comment.content}}</p>
+        </div>
+      </div>
+      <!-- edit comment -->
+      <div class="row">
+        <div class="col-12 text-right edit_delete_options">
+          <!-- open modal for editing comment -->
+          <a href="" class="edit_comment_link" data-message-id="{{message.id}}" data-comment-id="{{comment.id}}" data-comment="{{comment.content}}" data-toggle="modal" data-target="#edit_comment_modal">edit</a>&nbsp|
+          <a href="" class="delete_comment_link" data-message-id="{{message.id}}" data-comment-id="{{comment.id}}" data-toggle="modal" data-target="#delete_comment_modal">delete</a>
+            
+        </div>
+      </div>
+      {% endfor %}
